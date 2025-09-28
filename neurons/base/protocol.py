@@ -49,12 +49,13 @@ class AIAgentProtocol(bt.Synapse):
     """
 
     # Required request input, filled by sending dendrite caller.
-    input: Dict[str, Any] = None
+    input: Optional[Dict[str, Any]] = None
+
 
     # Optional request output, filled by receiving axon.
-    output: Dict[str, Any] = None
+    output: Optional[Dict[str, Any]] = None
 
-    def deserialize(self) -> int:
+    def deserialize(self) -> Optional[Dict[str, Any]]:
         """
         Deserialize the AIAgentProtocol output. This method retrieves the response from
         the miner in the form of output, deserializes it and returns it
