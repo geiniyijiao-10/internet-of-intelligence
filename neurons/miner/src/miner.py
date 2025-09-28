@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 Internet Of Intelligence
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -19,14 +18,13 @@
 
 import time
 import typing
+import aiohttp
+from neurons.base.protocol import AIAgentProtocol
+
 import bittensor as bt
 
-# Bittensor Miner Template:
-import template
-
 # import base miner class which takes care of most of the boilerplate
-from template.base.miner import BaseMinerNeuron
-
+from neurons.miner.src.core.miner import BaseMinerNeuron
 
 class Miner(BaseMinerNeuron):
     """
@@ -43,27 +41,71 @@ class Miner(BaseMinerNeuron):
         # TODO(developer): Anything specific to your use case you can do here
 
     async def forward(
-        self, synapse: template.protocol.Dummy
-    ) -> template.protocol.Dummy:
+        self, synapse: AIAgentProtocol
+    ) -> AIAgentProtocol:
         """
-        Processes the incoming 'Dummy' synapse by performing a predefined operation on the input data.
+        Processes the incoming 'AIAgentProtocol' synapse by performing a predefined operation on the input data.
         This method should be replaced with actual logic relevant to the miner's purpose.
 
         Args:
-            synapse (template.protocol.Dummy): The synapse object containing the 'dummy_input' data.
+            synapse (neurons.base.AIAgentProtocol): The synapse object containing the 'input' data.
 
         Returns:
-            template.protocol.Dummy: The synapse object with the 'dummy_output' field set to twice the 'dummy_input' value.
+            neurons.base.AIAgentProtocol: The synapse object with the 'output' field set to twice the 'input' value.
 
         The 'forward' function is a placeholder and should be overridden with logic that is appropriate for
         the miner's intended operation. This method demonstrates a basic transformation of input data.
         """
-        # TODO(developer): Replace with actual implementation logic.
-        synapse.dummy_output = synapse.dummy_input * 2
+
+        method = synapse.input.get("method")
+        bt.logging.info(f"[Miner] forward synapse.input: {synapse.input}")
+
+        try:
+            if method == "health" or method == "ping":
+                data = {"ip": self.axon.external_ip, "device": self.device, "uid": self.uid}
+                status = True
+            elif method == "config":
+                url = synapse.input.get("url")
+                body = synapse.input.get("body", {})
+
+                if not url:
+                    raise ValueError("Missing 'url' in input for config request")
+
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(url, json=body, timeout=10) as response:
+                        resp_json = await response.json()
+
+                bt.logging.info(f"[Miner] forward config response: {resp_json}")
+
+                errno = resp_json.get("errno", -1)
+                errmsg = resp_json.get("errmsg", "Unknown error")
+
+                if errno != 0:
+                    message = errmsg
+                    status = False
+                    data = {}
+                else:
+                    message = "success"
+                    status = True
+                    data = resp_json.get("data", {})
+            else:
+                status = False
+                message = f"Unknown method: {method}"
+        except Exception as e:
+            status = False
+            message = str(e)
+            bt.logging.error(f"[Miner] forward synapse Exception: [/red]{e}")
+
+        synapse.output = {
+            "method": method,
+            "status": status,
+            "message": message,
+            "data": data,
+        }
         return synapse
 
     async def blacklist(
-        self, synapse: template.protocol.Dummy
+        self, synapse: AIAgentProtocol
     ) -> typing.Tuple[bool, str]:
         """
         Determines whether an incoming request should be blacklisted and thus ignored. Your implementation should
@@ -74,7 +116,7 @@ class Miner(BaseMinerNeuron):
         requests before they are deserialized to avoid wasting resources on requests that will be ignored.
 
         Args:
-            synapse (template.protocol.Dummy): A synapse object constructed from the headers of the incoming request.
+            synapse (neurons.base.AIAgentProtocol): A synapse object constructed from the headers of the incoming request.
 
         Returns:
             Tuple[bool, str]: A tuple containing a boolean indicating whether the synapse's hotkey is blacklisted,
@@ -126,7 +168,7 @@ class Miner(BaseMinerNeuron):
         )
         return False, "Hotkey recognized!"
 
-    async def priority(self, synapse: template.protocol.Dummy) -> float:
+    async def priority(self, synapse: AIAgentProtocol) -> float:
         """
         The priority function determines the order in which requests are handled. More valuable or higher-priority
         requests are processed before others. You should design your own priority mechanism with care.
@@ -134,7 +176,7 @@ class Miner(BaseMinerNeuron):
         This implementation assigns priority to incoming requests based on the calling entity's stake in the metagraph.
 
         Args:
-            synapse (template.protocol.Dummy): The synapse object that contains metadata about the incoming request.
+            synapse (neurons.base.AIAgentProtocol): The synapse object that contains metadata about the incoming request.
 
         Returns:
             float: A priority score derived from the stake of the calling entity.
@@ -170,4 +212,4 @@ if __name__ == "__main__":
     with Miner() as miner:
         while True:
             bt.logging.info(f"Miner running... {time.time()}")
-            time.sleep(5)
+            time.sleep(12)

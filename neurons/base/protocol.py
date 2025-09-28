@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 Internet Of Intelligence
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -17,10 +16,8 @@
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import typing
+from typing import Dict, Any, Optional
 import bittensor as bt
-
-# TODO(developer): Rewrite with your protocol definition.
 
 # This is the protocol for the dummy miner and validator.
 # It is a simple request-response protocol where the validator sends a request
@@ -28,49 +25,49 @@ import bittensor as bt
 
 # ---- miner ----
 # Example usage:
-#   def dummy( synapse: Dummy ) -> Dummy:
-#       synapse.dummy_output = synapse.dummy_input + 1
+#   def ai_agent( synapse: AIAgentProtocol ) -> AIAgentProtocol:
+#       synapse.output = synapse.input
 #       return synapse
 #   axon = bt.axon().attach( dummy ).serve(netuid=...).start()
 
 # ---- validator ---
 # Example usage:
 #   dendrite = bt.dendrite()
-#   dummy_output = dendrite.query( Dummy( dummy_input = 1 ) )
-#   assert dummy_output == 2
+#   output = dendrite.query( AIAgentProtocol( input = {"message": ""} ) )
+#   assert output == {"result": ""}
 
 
-class Dummy(bt.Synapse):
+class AIAgentProtocol(bt.Synapse):
     """
-    A simple dummy protocol representation which uses bt.Synapse as its base.
+    A simple AIAgent protocol representation which uses bt.Synapse as its base.
     This protocol helps in handling dummy request and response communication between
     the miner and the validator.
 
     Attributes:
-    - dummy_input: An integer value representing the input request sent by the validator.
-    - dummy_output: An optional integer value which, when filled, represents the response from the miner.
+    - input: An integer value representing the input request sent by the validator.
+    - output: An optional integer value which, when filled, represents the response from the miner.
     """
 
     # Required request input, filled by sending dendrite caller.
-    dummy_input: int
+    input: Dict[str, Any] = None
 
     # Optional request output, filled by receiving axon.
-    dummy_output: typing.Optional[int] = None
+    output: Dict[str, Any] = None
 
     def deserialize(self) -> int:
         """
-        Deserialize the dummy output. This method retrieves the response from
-        the miner in the form of dummy_output, deserializes it and returns it
+        Deserialize the AIAgentProtocol output. This method retrieves the response from
+        the miner in the form of output, deserializes it and returns it
         as the output of the dendrite.query() call.
 
         Returns:
-        - int: The deserialized response, which in this case is the value of dummy_output.
+        - int: The deserialized response, which in this case is the value of output.
 
         Example:
         Assuming a Dummy instance has a dummy_output value of 5:
-        >>> dummy_instance = Dummy(dummy_input=4)
-        >>> dummy_instance.dummy_output = 5
-        >>> dummy_instance.deserialize()
+        >>> ai_agent_instance = AIAgentProtocol(input=4)
+        >>> ai_agent_instance.output = 5
+        >>> ai_agent_instance.deserialize()
         5
         """
-        return self.dummy_output
+        return self.output

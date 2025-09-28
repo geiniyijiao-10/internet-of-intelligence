@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 Internet Of Intelligence
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -24,13 +23,16 @@ import time
 import bittensor as bt
 
 # import base validator class which takes care of most of the boilerplate
-from template.base.validator import BaseValidatorNeuron
+from neurons.validator.src.core.validator import BaseValidatorNeuron
 
-# Bittensor Validator Template:
-from template.validator import forward
+# Bittensor Validator:
+from neurons.validator.src.core.evaluate_miners import EvaluateMiners
 
 
 class Validator(BaseValidatorNeuron):
+
+    _evaluate_miners = None
+
     """
     Your validator neuron class. You should use this class to define your validator's behavior. In particular, you should replace the forward function with your own logic.
 
@@ -45,7 +47,7 @@ class Validator(BaseValidatorNeuron):
         bt.logging.info("load_state()")
         self.load_state()
 
-        # TODO(developer): Anything specific to your use case you can do here
+        self._evaluate_miners = EvaluateMiners(self)
 
     async def forward(self):
         """
@@ -56,8 +58,8 @@ class Validator(BaseValidatorNeuron):
         - Rewarding the miners
         - Updating the scores
         """
-        # TODO(developer): Rewrite this function based on your protocol definition.
-        return await forward(self)
+
+        return await self._evaluate_miners.start()
 
 
 # The main function parses the configuration and runs the validator.

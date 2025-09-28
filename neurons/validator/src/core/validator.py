@@ -1,7 +1,6 @@
 # The MIT License (MIT)
 # Copyright © 2023 Yuma Rao
-# TODO(developer): Set your name
-# Copyright © 2023 <your name>
+# Copyright © 2023 Internet Of Intelligence
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 # documentation files (the “Software”), to deal in the Software without restriction, including without limitation
@@ -28,13 +27,13 @@ import bittensor as bt
 from typing import List, Union
 from traceback import print_exception
 
-from template.base.neuron import BaseNeuron
-from template.base.utils.weight_utils import (
+from neurons.base.neuron import BaseNeuron
+from neurons.utils.weight_utils import (
     process_weights_for_netuid,
     convert_weights_and_uids_for_emit,
 )  # TODO: Replace when bittensor switches to numpy
-from template.mock import MockDendrite
-from template.utils.config import add_validator_args
+from neurons.base.mock import MockDendrite
+from neurons.utils.config import add_validator_args
 
 
 class BaseValidatorNeuron(BaseNeuron):
@@ -354,7 +353,7 @@ class BaseValidatorNeuron(BaseNeuron):
         # shape: [ metagraph.n ]
         scattered_rewards: np.ndarray = np.zeros_like(self.scores)
         scattered_rewards[uids_array] = rewards
-        bt.logging.debug(f"Scattered rewards: {rewards}")
+        bt.logging.debug(f"Scattered rewards: {rewards} uids: {uids}")
 
         # Update scores with rewards produced by this step.
         # shape: [ metagraph.n ]
