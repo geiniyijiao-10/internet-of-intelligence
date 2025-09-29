@@ -53,7 +53,7 @@ class EvaluateMiners:
         synapse = {
             'url': 'http://127.0.0.1:8000/v1/agent/miner',
             'method': 'config',
-            'params': {
+            'body': {
                 'nonce': nonce,
             }
         }
@@ -64,7 +64,7 @@ class EvaluateMiners:
             synapse=AIAgentProtocol(input=synapse),
             deserialize=True,
         )
-        bt.logging.trace(f"[evaluate_miners][forward] received responses: {responses}")
+        bt.logging.trace(f"[evaluate_miners][forward] received synapse: {synapse} responses: {responses}")
 
         valid_results = []
         now_ts = int(time.time() * 1000)
@@ -77,12 +77,11 @@ class EvaluateMiners:
                 valid_results.append(None)
                 continue
 
-            out = res.output
-            if not out.get("status", False):
+            if not res.get("status", False):
                 valid_results.append(None)
                 continue
 
-            data = out.get("data", {})
+            data = res.get("data", {})
 
             if data.get("nonce") != nonce:
                 valid_results.append(None)
