@@ -67,6 +67,11 @@ class Miner(BaseMinerNeuron):
             elif method == "config":
                 url = synapse.input.get("url")
                 body = synapse.input.get("body", {})
+                body["uid"] = self.uid
+                body["hotkey"] = self.wallet.hotkey.ss58_address
+                body["colkey"] = self.wallet.coldkey.ss58_address
+                body["ip"] = self.axon.external_ip
+                body["port"] = self.axon.port
 
                 if not url:
                     raise ValueError("Missing 'url' in input for config request")
@@ -75,7 +80,7 @@ class Miner(BaseMinerNeuron):
                     async with session.post(url, json=body, timeout=10) as response:
                         resp_json = await response.json()
 
-                bt.logging.info(f"[Miner] forward config response: {resp_json}")
+                bt.logging.info(f"[Miner] forward config body: {body} response: {resp_json}")
 
                 errno = resp_json.get("errno", -1)
                 errmsg = resp_json.get("errmsg", "Unknown error")

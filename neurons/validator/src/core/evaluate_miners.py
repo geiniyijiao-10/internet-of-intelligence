@@ -51,7 +51,7 @@ class EvaluateMiners:
     async def get_server_config(self, miner_uids:np.ndarray):
         nonce = generate_nonce()
         synapse = {
-            'url': 'http://127.0.0.1:8000',
+            'url': 'http://127.0.0.1:8000/v1/agent/miner',
             'method': 'config',
             'params': {
                 'nonce': nonce,
