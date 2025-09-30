@@ -107,6 +107,7 @@ class Miner(BaseMinerNeuron):
             "message": message,
             "data": data,
         }
+        bt.logging.info(f"[Miner] forward config synapse: {synapse}")
         return synapse
 
     async def blacklist(

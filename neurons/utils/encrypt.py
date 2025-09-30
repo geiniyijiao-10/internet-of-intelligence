@@ -9,28 +9,45 @@ from cryptography.hazmat.primitives import serialization
 # -------------------------------
 # struct_to_map
 # -------------------------------
-def struct_to_map(data: Any) -> Dict[str, str]:
+def struct_to_map(data: Any, prefix: str = "") -> Dict[str, str]:
     """
-    Convert an object or dictionary into a key-value map.
-    Skip the 'signature' field and convert supported types to string.
+    Convert an object, dict, list, or basic type into a flattened key-value string map.
+    - Skip the 'signature' field
+    - Flatten nested structures using dot notation (e.g. 'user.name', 'tags.0')
+    - Convert all values to str
     """
-    if isinstance(data, dict):
-        items = data
-    else:
-        items = data.__dict__
 
     result = {}
+
+    if isinstance(data, dict):
+        items = data
+    elif hasattr(data, "__dict__"):
+        items = data.__dict__
+    else:
+        return {prefix: str(data)} if prefix else {}
+
     for k, v in items.items():
         if k == "signature":
             continue
-        if isinstance(v, bool):
-            result[k] = str(v).lower()
-        elif isinstance(v, (int, float)):
-            result[k] = str(v)
+
+        key = f"{prefix}.{k}" if prefix else k
+
+        if isinstance(v, (str, int, float, bool)):
+            result[key] = str(v).lower() if isinstance(v, bool) else str(v)
+
         elif isinstance(v, datetime):
-            result[k] = v.isoformat()
+            result[key] = v.isoformat()
+
+        elif isinstance(v, (list, tuple, set)):
+            for i, item in enumerate(v):
+                result.update(struct_to_map(item, f"{key}.{i}"))
+
+        elif isinstance(v, dict) or hasattr(v, "__dict__"):
+            result.update(struct_to_map(v, key))
+
         elif v is not None:
-            result[k] = str(v)
+            result[key] = str(v)
+
     return result
 
 
