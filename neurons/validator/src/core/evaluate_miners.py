@@ -72,28 +72,37 @@ class EvaluateMiners:
         pub_key = read_public_key(pub_key_path)
 
         for res in responses:
-
             if res == None:
+                bt.logging.trace(f"[evaluate_miners][forward] res is None")
                 valid_results.append(None)
                 continue
 
             if not res.get("status", False):
+                bt.logging.trace(f"[evaluate_miners][forward] param error: status")
                 valid_results.append(None)
                 continue
 
             data = res.get("data", {})
 
             if data.get("nonce") != nonce:
+                bt.logging.trace(f"[evaluate_miners][forward] param error: nonce")
                 valid_results.append(None)
                 continue
 
             signature = data.get("signature")
-            if not signature or not verify(data, signature, pub_key):
+            if not signature:
+                bt.logging.trace(f"[evaluate_miners][forward] param error: signature")
+                valid_results.append(None)
+                continue
+
+            if not verify(data, signature, pub_key):
+                bt.logging.trace(f"[evaluate_miners][forward] param error: verify signature")
                 valid_results.append(None)
                 continue
 
             ts = data.get("timestamp", 0)
             if now_ts - ts > 10_000:
+                bt.logging.trace(f"[evaluate_miners][forward] param error: timestamp")
                 valid_results.append(None)
                 continue
 

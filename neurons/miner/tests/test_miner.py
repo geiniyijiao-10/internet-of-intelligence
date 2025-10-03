@@ -5,22 +5,24 @@ from prettytable import PrettyTable
 class TestMiner(unittest.TestCase):
 
     def test_metagrash(self):
-        me = bt.Metagraph(netuid=2, network='local')
+        sub = bt.subtensor(network='local')
+        mg = bt.metagraph(netuid=4, network='local')
+        mg.sync(subtensor=sub)
 
         i = 0
-        validator = me.validator_permit
-        stake = me.stake
-        vtrust = me.validator_trust
-        trust = me.trust
-        consensus = me.consensus
-        incentive = me.incentive
-        dividends = me.dividends
-        emission = me.emission
-        update = me.last_update
-        alpha_stake = me.alpha_stake
-        active = me.active
+        validator = mg.validator_permit
+        stake = mg.stake
+        vtrust = mg.validator_trust
+        trust = mg.trust
+        consensus = mg.consensus
+        incentive = mg.incentive
+        dividends = mg.dividends
+        emission = mg.emission
+        update = mg.last_update
+        alpha_stake = mg.alpha_stake
+        active = mg.active
         table = PrettyTable(["Active", "UID", "TYPE", "Stake Weight", "VTrust", "Trust", "Consensus", "Incentive", "Dividends", "Emission", "Updated", "Axon", "Port", "HotKey", "ColdKey", "AlphaStake"])
-        for axon in me.axons:
+        for axon in mg.axons:
             type = "Miner"
             if validator[i] :
                 type = "Validator"
@@ -31,3 +33,7 @@ class TestMiner(unittest.TestCase):
         print(table)
 
         pass
+
+    def test_weights(self):
+        mg = bt.Metagraph(netuid=4, network='local')
+        print("weights:\n", mg.weights)
