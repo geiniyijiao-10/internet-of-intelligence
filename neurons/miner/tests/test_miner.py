@@ -5,8 +5,8 @@ from prettytable import PrettyTable
 class TestMiner(unittest.TestCase):
 
     def test_metagrash(self):
-        sub = bt.subtensor(network='local')
-        mg = bt.metagraph(netuid=4, network='local')
+        sub = bt.subtensor(network='test')
+        mg = bt.metagraph(netuid=374, network='test')
         mg.sync(subtensor=sub)
 
         i = 0
@@ -35,5 +35,5 @@ class TestMiner(unittest.TestCase):
         pass
 
     def test_weights(self):
-        mg = bt.Metagraph(netuid=4, network='local')
+        mg = bt.Metagraph(netuid=374, network='test')
         print("weights:\n", mg.weights)

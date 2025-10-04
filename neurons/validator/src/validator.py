@@ -22,6 +22,7 @@ import time
 # Bittensor
 import bittensor as bt
 
+from neurons.base.neuron import BaseNeuron
 # import base validator class which takes care of most of the boilerplate
 from neurons.validator.src.core.validator import BaseValidatorNeuron
 
@@ -67,4 +68,4 @@ if __name__ == "__main__":
     with Validator() as validator:
         while True:
             bt.logging.info(f"Validator running... {time.time()}")
-            time.sleep(5)
+            time.sleep(300)

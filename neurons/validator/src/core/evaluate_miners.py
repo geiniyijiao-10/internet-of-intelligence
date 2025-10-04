@@ -27,6 +27,7 @@ from neurons.base.neuron import BaseNeuron
 from neurons.base.protocol import AIAgentProtocol
 from neurons.utils.uids import get_random_uids
 from neurons.utils.encrypt import generate_nonce, verify, read_public_key
+from collections import defaultdict
 
 class EvaluateMiners:
     _validator = None
@@ -46,7 +47,7 @@ class EvaluateMiners:
 
         bt.logging.info(f"[evaluate_miners][forward] Scored responses: miner_uids:{miner_uids} rewards:{rewards}")
         self._validator.update_scores(rewards, miner_uids)
-        time.sleep(60)
+        time.sleep(120)
 
     async def get_server_config(self, miner_uids:np.ndarray):
         nonce = generate_nonce()
@@ -59,8 +60,17 @@ class EvaluateMiners:
         }
         bt.logging.trace(f"[evaluate_miners][forward] start miner uids:{miner_uids} synapse:{synapse}")
 
+        mg = [self._validator.metagraph.axons[uid] for uid in miner_uids]
+
+        active_ip_count = defaultdict(int)
+        for uid, axon in enumerate(self._validator.metagraph.axons):
+            if self._validator.metagraph.active[uid] == 1:
+                ip = axon.ip
+                active_ip_count[ip] += 1
+        active_ip_count = dict(active_ip_count)
+
         responses = await self._validator.dendrite(
-            axons=[self._validator.metagraph.axons[uid] for uid in miner_uids],
+            axons=mg,
             synapse=AIAgentProtocol(input=synapse),
             deserialize=True,
         )
@@ -71,7 +81,7 @@ class EvaluateMiners:
         pub_key_path = Path(__file__).resolve().parent.parent / "config" / "public.key"
         pub_key = read_public_key(pub_key_path)
 
-        for res in responses:
+        for i, res in enumerate(responses):
             if res == None:
                 bt.logging.trace(f"[evaluate_miners][forward] res is None")
                 valid_results.append(None)
@@ -82,7 +92,38 @@ class EvaluateMiners:
                 valid_results.append(None)
                 continue
 
+            if i >= len(mg) or mg[i] is None:
+                bt.logging.trace(f"[evaluate_miners][forward] {i} not in metagraph:{mg}")
+                valid_results.append(None)
+                continue
+
+            m = mg[i]
             data = res.get("data", {})
+
+            if active_ip_count.get(m.ip) > 1:
+                bt.logging.trace(f"[evaluate_miners][forward] ip count={active_ip_count.get(m.ip)} > 1")
+                valid_results.append(None)
+                continue
+
+            if data.get("ip") != m.ip:
+                bt.logging.trace(f"[evaluate_miners][forward] ip error")
+                valid_results.append(None)
+                continue
+
+            if data.get("port") != m.port:
+                bt.logging.trace(f"[evaluate_miners][forward] port error")
+                valid_results.append(None)
+                continue
+
+            if data.get("colkey") != m.coldkey:
+                bt.logging.trace(f"[evaluate_miners][forward] coldkey error")
+                valid_results.append(None)
+                continue
+
+            if data.get("hotkey") != m.hotkey:
+                bt.logging.trace(f"[evaluate_miners][forward] hotkey error")
+                valid_results.append(None)
+                continue
 
             if data.get("nonce") != nonce:
                 bt.logging.trace(f"[evaluate_miners][forward] param error: nonce")
@@ -127,8 +168,19 @@ class EvaluateMiners:
             for r in responses if r is not None
         )
 
-        scores = []
+        valid_avg_list = []
         for r in responses:
+            if r is None:
+                continue
+            uptimes = [c["uptime"] for c in r["containers"] if c["status"] == 1]
+            if uptimes:
+                avg_container_uptime = sum(uptimes) / len(uptimes)
+                if avg_container_uptime > conf.POD_RUN_TIME_AVG_DAY:
+                    valid_avg_list.append(r)
+        total_long_run = len(valid_avg_list)
+
+        scores = []
+        for i, r in enumerate(responses):
             if r is None:
                 scores.append(0.0)
                 continue
@@ -145,14 +197,22 @@ class EvaluateMiners:
             valid_uptimes = [c["uptime"] for c in r["containers"] if c["status"] == 1]
             if valid_uptimes:
                 avg_container_uptime = sum(valid_uptimes) / len(valid_uptimes)
-                if avg_container_uptime > 604800:
-                    score_c = conf.POD_RUN_TIME_SCORE
+                if avg_container_uptime > conf.POD_RUN_TIME_AVG_DAY and total_long_run > 0:
+                    score_c = 1 / total_long_run
 
             # GPU rarity weighting
             gpu_weight = sum(conf.GPU_MODEL_RATES.get(g.get("model"), 0) for g in r["gpu"])
 
-            total_score = (score_a + score_b + score_c) * (1 + gpu_weight)
+            total_score = (conf.GPU_CORES_SCORE * score_a + conf.POD_RUN_TIME_SCORE * score_b + conf.POD_RUN_TIME_AVG_SCORE * score_c) * (1 + gpu_weight)
             scores.append(total_score)
+
+            bt.logging.trace(
+                f"[evaluate_miners][get_rewards][{i}] "
+                f"formula: ({conf.GPU_CORES_SCORE}*{score_a:.6f} + "
+                f"{conf.POD_RUN_TIME_SCORE}*{score_b:.6f} + "
+                f"{conf.POD_RUN_TIME_AVG_SCORE}*{score_c:.6f}) * (1 + {gpu_weight:.6f}) "
+                f"= {total_score:.6f}"
+            )
 
         scores_result = np.array(scores)
 
