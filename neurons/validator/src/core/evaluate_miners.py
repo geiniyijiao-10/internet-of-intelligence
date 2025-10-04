@@ -100,7 +100,7 @@ class EvaluateMiners:
             m = mg[i]
             data = res.get("data", {})
 
-            if active_ip_count.get(m.ip) > 1:
+            if active_ip_count.get(m.ip, 0) > 1:
                 bt.logging.trace(f"[evaluate_miners][forward] ip count={active_ip_count.get(m.ip)} > 1")
                 valid_results.append(None)
                 continue
