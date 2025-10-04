@@ -1,6 +1,6 @@
 GPU_MODEL_RATES = {
     "NVIDIA B200": .05,
-    "NVIDIA H200": .56,
+    "NVIDIA H200": .08,
     "NVIDIA H100 80GB HBM3": .10,
     "NVIDIA H100 NVL": .01,
     "NVIDIA H100 PCIe": .01,
