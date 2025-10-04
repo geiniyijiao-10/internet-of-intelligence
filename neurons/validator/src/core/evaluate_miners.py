@@ -115,7 +115,7 @@ class EvaluateMiners:
                 valid_results.append(None)
                 continue
 
-            if data.get("colkey") != m.coldkey:
+            if data.get("coldkey") != m.coldkey:
                 bt.logging.trace(f"[evaluate_miners][forward] coldkey error")
                 valid_results.append(None)
                 continue
