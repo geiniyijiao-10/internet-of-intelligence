@@ -68,8 +68,8 @@ class Miner(BaseMinerNeuron):
                 url = synapse.input.get("url")
                 body = synapse.input.get("body", {})
                 body["uid"] = self.uid
-                body["hotkey"] = self.metagraph.axons[self.uid].coldkey
-                body["colkey"] = self.metagraph.axons[self.uid].hotkey
+                body["hotkey"] = self.metagraph.axons[self.uid].hotkey
+                body["colkey"] = self.metagraph.axons[self.uid].coldkey
                 body["ip"] = self.axon.external_ip
                 body["port"] = self.axon.port
 
